@@ -1,6 +1,6 @@
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 class Master {
@@ -16,21 +16,23 @@ class Master {
     }
 
 
-    private void generatePhrase(String curPhrase) throws FileNotFoundException {
+    private void generatePhrase(String curPhrase) {
 
         if (first) {
-            //This string makes it work. Really. It was used to throw a lot of errors recently.
-            if ((filler.getConnectedWords(curPhrase, themeDir) != null) && (curPhrase != null) && ((filler.getConnectedWords(curPhrase, themeDir).size() > 0))) {
+            ArrayList<String> connectedWords = filler.getConnectedWords(curPhrase, themeDir);
+            if ((curPhrase != null) && ((connectedWords.size() > 0))) {
                 curPhrase = String.valueOf(curPhrase.charAt(0)).toUpperCase() + curPhrase.substring(1, curPhrase.length())
-                        + " " + filler.getConnectedWords(curPhrase, themeDir).get((int) (Math.random() * filler.getConnectedWords(curPhrase, themeDir).size()));
+                        + " " + connectedWords.get((int) (Math.random() * connectedWords.size()));
                 first = false;
             }
         } else {
             //Totally the same thing as above.
-            if ((filler.getConnectedWords(curPhrase.split(" ")[curPhrase.split(" ").length - 1], themeDir) != null) && (filler.getConnectedWords(curPhrase.split(" ")[curPhrase.split(" ").length - 1], themeDir).size() > 0)) {
+            String[] curPhraseArray = curPhrase.split(" ");
+            String lastPhraseWord = curPhraseArray[curPhraseArray.length - 1];
+            if ((filler.getConnectedWords(lastPhraseWord, themeDir).size() > 0)) {
                 //It's just much more comfortable to work with this values when they are separated.
-                int tmp = (int) (Math.random() * filler.getConnectedWords(curPhrase.split(" ")[curPhrase.split(" ").length - 1], themeDir).size());
-                curPhrase += " " + filler.getConnectedWords(curPhrase.split(" ")[curPhrase.split(" ").length - 1], themeDir).get(tmp);
+                int tmp = (int) (Math.random() * filler.getConnectedWords(lastPhraseWord, themeDir).size());
+                curPhrase += " " + filler.getConnectedWords(lastPhraseWord, themeDir).get(tmp);
             }
         }
 
@@ -38,25 +40,21 @@ class Master {
         phrase = curPhrase;
         //Will stop executing method if string ends with "dot"
         //Second check is needed to fix StackOverflow
-        //TODO remove that crunch.
-        if (phrase != null && phrase.charAt(phrase.length()-1) != '.' && (Math.random() > 0.01)) {
-            generatePhrase(curPhrase);
+        //TODO remove this workaround
+        if (Math.random() > 0.01) {
+            if (phrase != null && phrase.charAt(phrase.length()-1) != '.') {
+                generatePhrase(curPhrase);
+            }
+        } else {
+            phrase = phrase.substring(0, phrase.length()-2) + ".";
         }
-        /*
-        }else{
-            phrase = phrase.substring(0, curPhrase.length()-2) + ".";
-        }*/
-    }
-
-    Filler getFiller() {
-        return filler;
     }
 
     void setFiller(Filler newFiller) {
         filler = newFiller;
     }
 
-    private String getSomeText(int iterationTot) throws IOException {
+    private String getSomeText(int iterationTot) {
         if (filler == null) {
             filler = new Filler();
         }
@@ -76,7 +74,7 @@ class Master {
 
     //Returns few sentences about some theme.
     //Ahtung! You need a specified directory with thematic words.
-    String getRawOutput(File theme, int numOfPhrases) throws IOException {
+    String getRawOutput(File theme, int numOfPhrases) {
         themeDir = theme;
         return getSomeText(numOfPhrases);
     }

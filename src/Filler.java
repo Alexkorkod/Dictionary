@@ -113,20 +113,21 @@ class Filler {
     }
 
 
-    ArrayList<String> getConnectedWords(String neededWord, File themeDir) throws FileNotFoundException {
+    ArrayList<String> getConnectedWords(String neededWord, File themeDir) {
         File neededWordFile = new File(themeDir.getName() + File.separator + neededWord + ".txt");
+        ArrayList<String> returnedArr = new ArrayList<String>();
 
         if (neededWordFile.exists()) {
-            mainInputScanner = new Scanner(neededWordFile);
-            ArrayList<String> returnedArr = new ArrayList<String>();
-            while (mainInputScanner.hasNext()) {
-                returnedArr.add(mainInputScanner.next());
+            try {
+                mainInputScanner = new Scanner(neededWordFile);
+                while (mainInputScanner.hasNext()) {
+                    returnedArr.add(mainInputScanner.next());
+                }
+            } catch (FileNotFoundException fnfex) {
+                System.out.println("No file for next word");
             }
-            return returnedArr;
-        } else {
-            return null;
         }
-
+        return returnedArr;
     }
 
     private void streamCloser(FileWriter flWr, FileOutputStream outputStream) throws IOException {
@@ -136,28 +137,6 @@ class Filler {
 
         if (outputStream != null) {
             outputStream.close();
-        }
-    }
-
-    //Just a logic template.
-
-    private void checkPunct(String[] inputWord, int iterator) {
-        char punctChecker = inputWord[iterator].toCharArray()[inputWord.length - 1];
-        switch (punctChecker) {
-            case '.':
-            case ',':
-            case ';':
-            case '?':
-
-        }
-
-    }
-
-    void setInputFile(File file) {
-        if (file.isFile()) {
-            inputFile = file;
-        } else {
-            System.exit(2);
         }
     }
 }
