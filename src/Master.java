@@ -1,5 +1,8 @@
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.Level;
+
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -10,11 +13,31 @@ class Master {
     //Check for position of current word. We should know what case it should be, don't we?
     private boolean first = true;
 
+    public Logger getLogger() {
+        return logger;
+    }
 
-    Master() {
+    private Logger logger = LogManager.getLogger();
+    //private Logger logger = Logger.getLogger(Master.class.getName());
+
+    private static volatile Master instance;
+
+    private Master() {
         phrase = "Empty";
     }
 
+    static Master getInstance() {
+        Master localInstance = instance;
+        if (localInstance == null) {
+            synchronized (Master.class) {
+                localInstance = instance;
+                if (localInstance == null) {
+                    instance = localInstance = new Master();
+                }
+            }
+        }
+        return localInstance;
+    }
 
     private void generatePhrase(String curPhrase) {
 
@@ -67,7 +90,7 @@ class Master {
                 first = true;
             }
         } else {
-            System.exit(3);
+            logger.error("Filler list is empty. Dir: " + themeDir.getName());
         }
         return phrase;
     }

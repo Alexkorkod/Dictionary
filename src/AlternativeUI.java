@@ -5,6 +5,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 
+//TODO make word wrap
+//TODO deal with default values
+//TODO make documentation
 public class AlternativeUI {
     private JButton generateAwesomnessButton;
     private JButton uploadRawInputForButton;
@@ -13,6 +16,7 @@ public class AlternativeUI {
     private JTextField theme;
     private JTextField sentencesNumber;
     private JFileChooser fileChooser;
+    private Master masterInstance = Master.getInstance();
 
     private AlternativeUI() {
         uploadRawInputForButton.addActionListener(new ActionListener() {
@@ -24,7 +28,7 @@ public class AlternativeUI {
                 fileChooser.setFileFilter(filter);
                 fileChooser.showOpenDialog(mailPanel);
                 File input = fileChooser.getSelectedFile();
-                Core.getMaster().setFiller(new Filler(input));
+                masterInstance.setFiller(new Filler(input));
             }
         });
         exitButton.addActionListener(new ActionListener() {
@@ -46,7 +50,7 @@ public class AlternativeUI {
                 frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
                 frame.getContentPane().setMaximumSize(screenSize);
                 for (int i =0; i < numOfPhrases ; i++) {
-                    gui.textArea1.append(Core.getMaster().getRawOutput(themeDir, numOfPhrases) + "\n");
+                    gui.textArea1.append(masterInstance.getRawOutput(themeDir, numOfPhrases) + "\n");
                 }
                 frame.pack();
                 frame.setVisible(true);
@@ -60,11 +64,9 @@ public class AlternativeUI {
         double width = screenSize.getWidth();
         double height = screenSize.getHeight();
         frame.setContentPane(new AlternativeUI().mailPanel);
-        //TODO proper screen center location
-        //frame.setLocation((int)(width - frame.getContentPane().getWidth())/2, (int)(height - frame.getContentPane().getHeight())/2);
-        frame.setLocation((int)(width - 466)/2, (int)(height - 211)/2);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.pack();
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
 }
