@@ -1,6 +1,5 @@
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.Level;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -12,15 +11,19 @@ class Master {
     private File themeDir;
     //Check for position of current word. We should know what case it should be, don't we?
     private boolean first = true;
+    private Logger errLogger = LogManager.getRootLogger();
+    private Logger commonLogger = LogManager.getLogger("common");
 
-    public Logger getLogger() {
-        return logger;
+    final String STOP = "STOP RIGHT THERE YOU CRIMINAL SCUM";
+    private static volatile Master instance;
+
+    Logger getLogger() {
+        return commonLogger;
     }
 
-    private Logger logger = LogManager.getLogger();
-    //private Logger logger = Logger.getLogger(Master.class.getName());
-
-    private static volatile Master instance;
+    void setThemeDir(File themeDir) {
+        this.themeDir = themeDir;
+    }
 
     private Master() {
         phrase = "Empty";
@@ -41,22 +44,17 @@ class Master {
 
     private void generatePhrase(String curPhrase) {
 
+        ArrayList<String> connectedWords;
+        String[] curPhraseArray = curPhrase.split(" ");
+        String lastPhraseWord = curPhraseArray[curPhraseArray.length - 1];
+        connectedWords = filler.getConnectedWords(lastPhraseWord, themeDir);
+        int tmp = (int) (Math.random() * connectedWords.size());
         if (first) {
-            ArrayList<String> connectedWords = filler.getConnectedWords(curPhrase, themeDir);
-            if ((curPhrase != null) && ((connectedWords.size() > 0))) {
-                curPhrase = String.valueOf(curPhrase.charAt(0)).toUpperCase() + curPhrase.substring(1, curPhrase.length())
-                        + " " + connectedWords.get((int) (Math.random() * connectedWords.size()));
-                first = false;
-            }
-        } else {
-            //Totally the same thing as above.
-            String[] curPhraseArray = curPhrase.split(" ");
-            String lastPhraseWord = curPhraseArray[curPhraseArray.length - 1];
-            if ((filler.getConnectedWords(lastPhraseWord, themeDir).size() > 0)) {
-                //It's just much more comfortable to work with this values when they are separated.
-                int tmp = (int) (Math.random() * filler.getConnectedWords(lastPhraseWord, themeDir).size());
-                curPhrase += " " + filler.getConnectedWords(lastPhraseWord, themeDir).get(tmp);
-            }
+            curPhrase = String.valueOf(curPhrase.charAt(0)).toUpperCase() + curPhrase.substring(1, curPhrase.length());
+            first = false;
+        }
+        if ((connectedWords.size() > 0)) {
+            curPhrase += " " + connectedWords.get(tmp);
         }
 
         //Writing current string to global variable.
@@ -69,7 +67,7 @@ class Master {
                 generatePhrase(curPhrase);
             }
         } else {
-            phrase = phrase.substring(0, phrase.length()-2) + ".";
+            phrase = phrase + ".";
         }
     }
 
@@ -77,28 +75,25 @@ class Master {
         filler = newFiller;
     }
 
-    private String getSomeText(int iterationTot) {
+    void setFiller() {
         if (filler == null) {
             filler = new Filler();
+        } else {
+            commonLogger.warn("Trying to set already existing filter");
         }
         filler.setTheme(themeDir);
         filler.remember();
-        List<String> fillerList = filler.getListGlobal();
-        if (fillerList.size() > 0) {
-            for (int i = 0; i < iterationTot; i++) {
-                generatePhrase(fillerList.get((int) (Math.random() * fillerList.size())));
-                first = true;
-            }
-        } else {
-            logger.error("Filler list is empty. Dir: " + themeDir.getName());
-        }
-        return phrase;
     }
 
-    //Returns few sentences about some theme.
-    //Ahtung! You need a specified directory with thematic words.
-    String getRawOutput(File theme, int numOfPhrases) {
-        themeDir = theme;
-        return getSomeText(numOfPhrases);
+    String getMadeUpText() {
+        List<String> fillerList = filler.getListGlobal();
+        if (fillerList.size() > 0) {
+            generatePhrase(fillerList.get((int) (Math.random() * fillerList.size())));
+            first = true;
+        } else {
+            errLogger.error("Filler list is empty. Dir: " + themeDir.getName());
+            phrase = STOP;
+        }
+        return phrase;
     }
 }

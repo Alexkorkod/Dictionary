@@ -4,12 +4,12 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import org.apache.logging.log4j.Logger;
 
 //TODO make word wrap
-//TODO deal with default values
 //TODO make documentation
 public class AlternativeUI {
-    private JButton generateAwesomnessButton;
+    private JButton generateAwesomenessButton;
     private JButton uploadRawInputForButton;
     private JButton exitButton;
     private JPanel mailPanel;
@@ -17,6 +17,8 @@ public class AlternativeUI {
     private JTextField sentencesNumber;
     private JFileChooser fileChooser;
     private Master masterInstance = Master.getInstance();
+    private Logger logger = masterInstance.getLogger();
+    private int numOfPhrases = 1;
 
     private AlternativeUI() {
         uploadRawInputForButton.addActionListener(new ActionListener() {
@@ -37,20 +39,34 @@ public class AlternativeUI {
                 System.exit(0);
             }
         });
-        generateAwesomnessButton.addActionListener(new ActionListener() {
-            //TODO input validation
+        generateAwesomenessButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
                 Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-                int numOfPhrases = Integer.parseInt(sentencesNumber.getText());
+                String numOsfPhrasesStr = sentencesNumber.getText();
+                String genResult;
                 File themeDir = new File(theme.getText());
                 JFrame frame = new JFrame("OutputUI");
                 OutputUI gui = new OutputUI();
+                try {
+                    numOfPhrases = Integer.parseInt(numOsfPhrasesStr);
+                } catch (NumberFormatException nfex) {
+                    String errNotify = "Number of phrases is not number at all! Generating one string. ";
+                    gui.textArea1.append(errNotify + "\n");
+                    logger.warn( errNotify + "Input: " + numOsfPhrasesStr);
+                }
                 frame.setContentPane(gui.outputPanel);
                 frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
                 frame.getContentPane().setMaximumSize(screenSize);
-                for (int i =0; i < numOfPhrases ; i++) {
-                    gui.textArea1.append(masterInstance.getRawOutput(themeDir, numOfPhrases) + "\n");
+                masterInstance.setThemeDir(themeDir);
+                masterInstance.setFiller();
+                for (int i = 0; i < numOfPhrases ; i++) {
+                    genResult = masterInstance.getMadeUpText();
+                    if (genResult.equals(masterInstance.STOP)) {
+                        logger.warn("Error occurred in master during text creation.");
+                        return;
+                    }
+                    gui.textArea1.append(genResult + "\n");
                 }
                 frame.pack();
                 frame.setVisible(true);
@@ -60,9 +76,6 @@ public class AlternativeUI {
 
     public static void main(String[] args) {
         JFrame frame = new JFrame("AlternativeUI");
-        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-        double width = screenSize.getWidth();
-        double height = screenSize.getHeight();
         frame.setContentPane(new AlternativeUI().mailPanel);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.pack();
