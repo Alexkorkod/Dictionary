@@ -9,9 +9,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 
-//TODO make word wrap
-//TODO make documentation
-//TODO going to connect mystem via maven
 public class AlternativeUI {
     private JButton generateAwesomenessButton;
     private JButton uploadRawInputForButton;
