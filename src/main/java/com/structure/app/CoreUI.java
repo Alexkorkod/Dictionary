@@ -26,18 +26,14 @@ public class CoreUI {
                 fileChooser.setFileFilter(filter);
                 fileChooser.showOpenDialog(panel1);
                 core.setInput(fileChooser.getSelectedFile());
-                ArrayList<Iterable<Info>> resultList = core.process();
+                ArrayList<Combination> resultList = core.process();
                 BufferedWriter bw = null;
                 FileWriter fw = null;
                 try {
                     fw = new FileWriter("output.txt");
                     bw = new BufferedWriter(fw);
-                    for (Iterable<Info> item : resultList) {
-                        for (Info info : item) {
-                            String content = info.rawResponse();
-                            bw.write(content);
-                        }
-                        bw.write("\n");
+                    for (Combination item : resultList) {
+                        bw.write(item + "\n");
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
