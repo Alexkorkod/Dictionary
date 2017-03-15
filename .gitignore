@@ -3,3 +3,6 @@ target
 log
 output.txt
 input.txt
+.idea
+*.iml
+
