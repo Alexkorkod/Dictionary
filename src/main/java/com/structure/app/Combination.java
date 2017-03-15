@@ -4,21 +4,28 @@ import java.util.ArrayList;
 
 class Combination {
     private ArrayList<String> combArray;
+
+    ArrayList<String> getExampleArray() {
+        return exampleList;
+    }
+
+    private ArrayList<String> exampleList;
     private int occurrences;
 
     int getOccurrences() {
         return occurrences;
     }
-    public ArrayList<String> getCombArray() {
+    ArrayList<String> getCombArray() {
         return combArray;
     }
 
-    Combination(ArrayList<String> grammInfo) {
-        combArray = grammInfo;
-        occurrences = 1;
+    Combination(ArrayList<String> grammInfo, ArrayList<String> example) {
+        this.combArray = (ArrayList<String>) grammInfo.clone();
+        this.exampleList = (ArrayList<String>) example.clone();
+        this.occurrences = 1;
     }
 
     void increment() {
-        occurrences++;
+        this.occurrences += 1;
     }
 }

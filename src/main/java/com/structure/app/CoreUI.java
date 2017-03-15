@@ -4,6 +4,7 @@ import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
 
 public class CoreUI {
     private JPanel panel1;
@@ -32,12 +33,22 @@ public class CoreUI {
     }
 
     public static void main(String[] args) {
+        if (args[0] != null && args[0].equals("dev")) {
+            devRun();
+        } else {
+            core = new Core();
+            JFrame frame = new JFrame("CoreUI");
+            frame.setContentPane(new CoreUI().panel1);
+            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            frame.pack();
+            frame.setLocationRelativeTo(null);
+            frame.setVisible(true);
+        }
+    }
+
+    private static void devRun() {
         core = new Core();
-        JFrame frame = new JFrame("CoreUI");
-        frame.setContentPane(new CoreUI().panel1);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.pack();
-        frame.setLocationRelativeTo(null);
-        frame.setVisible(true);
+        core.setInput(new File("input.txt"));
+        core.process();
     }
 }

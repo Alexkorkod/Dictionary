@@ -16,15 +16,19 @@ import scala.collection.JavaConversions;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.function.Predicate;
 
+//TODO make combinationsList sorted by Combination's occurrences
 class Core {
 
     private final MyStem mystemAnalyzer =
             new Factory("-igd --format json --weight")
-                    .newMyStem("3.0", Option.<File>empty()).get();
+                    .newMyStem("3.0", Option.empty()).get();
     private File input;
     private ArrayList<ArrayList<String>> resultArray;
-    private ArrayList<Combination> combinatonsList = new ArrayList<>();
+    private ArrayList<Combination> combinationsList = new ArrayList<>();
     private String outputFileName = "output.txt";
 
     void setOutputFileName(String outputFileName) {
@@ -43,6 +47,7 @@ class Core {
                 analyzeSentence(sentence);
             }
             breakStructureDown();
+            sortCombinations();
             writeResults();
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -54,17 +59,21 @@ class Core {
         for (ArrayList<String> item : resultArray) {
             for (int i = 0; i < item.size(); i++) {
                 ArrayList<String> col = new ArrayList<>();
+                ArrayList<String> example = new ArrayList<>();
                 for (int j = i; j < item.size(); j++) {
                     String tmp = item.get(j);
-                    JSONArray infoArr = (JSONArray) ((JSONObject) parser.parse(tmp)).get("analysis");
+                    JSONObject jobj = ((JSONObject) parser.parse(tmp));
+                    JSONArray infoArr = (JSONArray) jobj.get("analysis");
+                    String text = jobj.get("text").toString();
                     if (infoArr.size() > 0) {
-                        String s = ((JSONObject) infoArr.get(0)).get("gr").toString();
-                        col.add(s);
+                        String gr = ((JSONObject) infoArr.get(0)).get("gr").toString();
+                        col.add(gr);
+                        example.add(text);
                         int pos = posInCombArray(col);
                         if (pos < 0) {
-                            combinatonsList.add(new Combination(col));
+                            combinationsList.add(new Combination(col, example));
                         } else {
-                            combinatonsList.get(pos).increment();
+                            combinationsList.get(pos).increment();
                         }
                     } else {
                         break;
@@ -76,8 +85,8 @@ class Core {
 
     private int posInCombArray(ArrayList<String> collection) {
         int key = 0;
-        for (Combination comb : combinatonsList) {
-            if (comb.getCombArray().equals(collection)) {
+        for (Combination comb : combinationsList) {
+            if (collection.equals(comb.getCombArray())) {
                 return key;
             }
             key++;
@@ -105,13 +114,13 @@ class Core {
         try {
             fw = new FileWriter(outputFileName);
             bw = new BufferedWriter(fw);
-            for (Combination item : combinatonsList) {
-                ArrayList<String> combArray = item.getCombArray();
-                if (combArray.size() > 1) {
-                    for (String s : combArray) {
-                        bw.write(s + " :: ");
-                    }
-                    bw.write("\n" + item.getOccurrences() + "\n");
+            for (Combination item : combinationsList) {
+                ArrayList<String> structArray = item.getCombArray();
+                ArrayList<String> exampleArray = item.getExampleArray();
+                if (structArray.size() > 1) {
+                    bw.write(String.join(" :: ", structArray) + "\n");
+                    bw.write(String.join(" ", exampleArray) + "\n");
+                    bw.write(item.getOccurrences() + "\n");
                 }
             }
         } catch (IOException e) {
@@ -128,5 +137,11 @@ class Core {
                 ex.printStackTrace();
             }
         }
+    }
+
+    private void sortCombinations() {
+        combinationsList.sort(Comparator.comparingInt(Combination::getOccurrences));
+        combinationsList.removeIf(com -> com.getOccurrences() < 2);
+        Collections.reverse(combinationsList);
     }
 }
