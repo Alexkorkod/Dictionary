@@ -13,72 +13,79 @@ import ru.stachek66.nlp.mystem.model.Info;
 import scala.Option;
 import scala.collection.JavaConversions;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Collection;
 
-/**
- * План следующий:
- * Взять вводные данные. (файл с текстом)
- * Разбить по предложениям
- * Проанализировать каждой предложение stem-ом
- * Записать структуры.
- */
-public class Core {
+class Core {
 
     private final MyStem mystemAnalyzer =
             new Factory("-igd --format json --weight")
                     .newMyStem("3.0", Option.<File>empty()).get();
-    public File input;
-    private String[] sentences;
+    private File input;
     private ArrayList<ArrayList<String>> resultArray;
-    private ArrayList<Combination> combArray = new ArrayList<>();
+    private ArrayList<Combination> combinatonsList = new ArrayList<>();
+    private String outputFileName = "output.txt";
 
-    public void setInput(File input) {
+    void setOutputFileName(String outputFileName) {
+        this.outputFileName = outputFileName;
+    }
+    void setInput(File input) {
         this.input = input;
     }
 
-    public ArrayList<Combination> process() {
-        resultArray = new ArrayList<ArrayList<String>>();
-        try(FileInputStream inputStream = new FileInputStream(input)) {
+    void process() {
+        resultArray = new ArrayList<>();
+        try (FileInputStream inputStream = new FileInputStream(input)) {
             String everything = IOUtils.toString(inputStream);
-            sentences = everything.split("\\.");
+            String[] sentences = everything.split("\\.");
             for (String sentence : sentences) {
-                resultArray.add(analyzeSentence(sentence));
+                analyzeSentence(sentence);
             }
-        } catch (IOException ioex) {
-            ioex.printStackTrace();
-            return null;
+            breakStructureDown();
+            writeResults();
+        } catch (Exception ex) {
+            ex.printStackTrace();
         }
-        return breakStructureDown(resultArray);
     }
 
-    private ArrayList<Combination> breakStructureDown(ArrayList<ArrayList<String>> processResult) {
+    private void breakStructureDown() throws ParseException {
         JSONParser parser = new JSONParser();
-        for (ArrayList<String> item : processResult) {
-            combArray.add(new Combination());
+        for (ArrayList<String> item : resultArray) {
             for (int i = 0; i < item.size(); i++) {
-                String tmp = item.get(i);
-                try {
-                    JSONObject obj = (JSONObject) ((JSONArray) ((JSONObject) parser.parse(tmp)).get("analysis")).get(0);
-                    String s = obj.get("gr").toString();
-                    //Just for breakpoint
-                    //TODO here we need to append Strings to combination
-                    //TODO OR we could grow list of gr-s on each iteration and create new Combinations with it;
-                    combArray.size();
-                } catch (ParseException e) {
-                    e.printStackTrace();
+                ArrayList<String> col = new ArrayList<>();
+                for (int j = i; j < item.size(); j++) {
+                    String tmp = item.get(j);
+                    JSONArray infoArr = (JSONArray) ((JSONObject) parser.parse(tmp)).get("analysis");
+                    if (infoArr.size() > 0) {
+                        String s = ((JSONObject) infoArr.get(0)).get("gr").toString();
+                        col.add(s);
+                        int pos = posInCombArray(col);
+                        if (pos < 0) {
+                            combinatonsList.add(new Combination(col));
+                        } else {
+                            combinatonsList.get(pos).increment();
+                        }
+                    } else {
+                        break;
+                    }
                 }
             }
-            //sentence end
         }
-        return combArray;
     }
 
-    //FUCK ITERABLES
-    private ArrayList<String> analyzeSentence(String sent) {
+    private int posInCombArray(ArrayList<String> collection) {
+        int key = 0;
+        for (Combination comb : combinatonsList) {
+            if (comb.getCombArray().equals(collection)) {
+                return key;
+            }
+            key++;
+        }
+        return -1;
+    }
+
+    private void analyzeSentence(String sent) {
         Collection<Info> tmp;
         ArrayList<String> result = new ArrayList<>();
         try {
@@ -86,12 +93,40 @@ public class Core {
             for (Info info : tmp) {
                 result.add(info.rawResponse());
             }
+            resultArray.add(result);
         } catch (MyStemApplicationException e) {
             e.printStackTrace();
-            return null;
         }
-        return result;
     }
 
-
+    private void writeResults() {
+        BufferedWriter bw = null;
+        FileWriter fw = null;
+        try {
+            fw = new FileWriter(outputFileName);
+            bw = new BufferedWriter(fw);
+            for (Combination item : combinatonsList) {
+                ArrayList<String> combArray = item.getCombArray();
+                if (combArray.size() > 1) {
+                    for (String s : combArray) {
+                        bw.write(s + " :: ");
+                    }
+                    bw.write("\n" + item.getOccurrences() + "\n");
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (bw != null) {
+                    bw.close();
+                }
+                if (fw != null) {
+                    fw.close();
+                }
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        }
+    }
 }

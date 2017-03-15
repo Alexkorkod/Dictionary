@@ -2,16 +2,23 @@ package com.structure.app;
 
 import java.util.ArrayList;
 
-public class Combination {
-    public ArrayList<String> combArray = new ArrayList<>();
-    public int occurrences;
+class Combination {
+    private ArrayList<String> combArray;
+    private int occurrences;
 
-    public Combination(String grammInfo) {
-        combArray.add(grammInfo);
+    int getOccurrences() {
+        return occurrences;
+    }
+    public ArrayList<String> getCombArray() {
+        return combArray;
+    }
+
+    Combination(ArrayList<String> grammInfo) {
+        combArray = grammInfo;
         occurrences = 1;
     }
 
-    public Combination() {
-        occurrences = 0;
+    void increment() {
+        occurrences++;
     }
 }

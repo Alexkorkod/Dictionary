@@ -1,19 +1,14 @@
 package com.structure.app;
 
-import ru.stachek66.nlp.mystem.model.Info;
-
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.ArrayList;
 
 public class CoreUI {
     private JPanel panel1;
     private JButton uploadButton;
+    private JTextField textField1;
     private JFileChooser fileChooser;
     private static Core core;
 
@@ -26,30 +21,12 @@ public class CoreUI {
                 fileChooser.setFileFilter(filter);
                 fileChooser.showOpenDialog(panel1);
                 core.setInput(fileChooser.getSelectedFile());
-                ArrayList<Combination> resultList = core.process();
-                BufferedWriter bw = null;
-                FileWriter fw = null;
-                try {
-                    fw = new FileWriter("output.txt");
-                    bw = new BufferedWriter(fw);
-                    for (Combination item : resultList) {
-                        bw.write(item + "\n");
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } finally {
-                    try {
-                        if (bw != null) {
-                            bw.close();
-                        }
-                        if (fw != null) {
-                            fw.close();
-                        }
-                    } catch (IOException ex) {
-                        ex.printStackTrace();
-                    }
-                    uploadButton.setText("Done.");
+                String outputFileName = textField1.getText();
+                if (outputFileName.length() > 0) {
+                    core.setOutputFileName(outputFileName);
                 }
+                core.process();
+                uploadButton.setText("Done.");
             }
         });
     }
