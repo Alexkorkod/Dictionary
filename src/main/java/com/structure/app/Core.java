@@ -42,6 +42,7 @@ class Core {
             breakStructureDown();
             sortCombinations();
             writeResults();
+            //ArrayList<String> sentence = Bulder.createSentenceTemplate(outputFileName);
         } catch (Exception ex) {
             ex.printStackTrace();
         }
@@ -121,6 +122,7 @@ class Core {
             JSONObject jObjWrapper = new JSONObject();
             JSONArray jArr = new JSONArray();
             for (Combination item : combinationsList) {
+                ArrayList<String> destinations = new ArrayList<>();
                 JSONObject jobj = new JSONObject();
                 ArrayList<String> structArray = item.getCombArray();
                 ArrayList<String> exampleArray = item.getExampleArray();
@@ -132,15 +134,21 @@ class Core {
                     JSONArray jArrPos = new JSONArray();
                     for (Position position : positionsArray) {
                         JSONObject jObjPos = new JSONObject();
-                        jObjPos.put("position", position.getPosition().toString());
+                        String curPos = position.getPosition().toString();
+                        jObjPos.put("position", curPos);
+                        destinations.add(curPos);
                         jObjPos.put("occurrences", position.getOccurrences());
                         jArrPos.put(jObjPos);
                     }
                     jobj.put("positions", jArrPos);
-                    jArr.put(jobj);
                 }
+                jArr.put(jobj);
+
             }
-            jObjWrapper.put("output", jArr);
+            for (String pos : destinations) {
+
+            }
+            jObjWrapper.put(pos, jobj);
             fw.write(jObjWrapper.toString(2));
         } catch (IOException e) {
             e.printStackTrace();
