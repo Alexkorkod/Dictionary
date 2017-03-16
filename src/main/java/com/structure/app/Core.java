@@ -1,5 +1,6 @@
 package com.structure.app;
 
+import com.google.gson.Gson;
 import org.apache.commons.io.IOUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -42,7 +43,7 @@ class Core {
             breakStructureDown();
             sortCombinations();
             writeResults();
-            //ArrayList<String> sentence = Bulder.createSentenceTemplate(outputFileName);
+            //ArrayList<String> sentence = Builder.createSentenceTemplate(outputFileName);
         } catch (Exception ex) {
             ex.printStackTrace();
         }
@@ -56,8 +57,6 @@ class Core {
                 Position.PositionEnum placement = Position.PositionEnum.ELSE;
                 if (i == 0) {
                     placement = Position.PositionEnum.FIRST;
-                } else if (i == item.size()) {
-                    placement = Position.PositionEnum.LAST;
                 }
                 for (int j = i; j < item.size(); j++) {
                     String tmp = item.get(j);
@@ -65,6 +64,9 @@ class Core {
                     JSONArray infoArr = (JSONArray) jobj.get("analysis");
                     String text = jobj.get("text").toString();
                     String gr;
+                    if (j == item.size() - 1) {
+                        placement = Position.PositionEnum.LAST;
+                    }
                     if (infoArr.length() > 0) {
                         gr = ((JSONObject) infoArr.get(0)).get("gr").toString();
                     } else {
@@ -116,56 +118,18 @@ class Core {
     }
 
     private void writeResults() {
-        FileWriter fw = null;
+        Gson gson = new Gson();
         try {
-            fw = new FileWriter(outputFileName);
-            JSONObject jObjWrapper = new JSONObject();
-            JSONArray jArr = new JSONArray();
-            for (Combination item : combinationsList) {
-                ArrayList<String> destinations = new ArrayList<>();
-                JSONObject jobj = new JSONObject();
-                ArrayList<String> structArray = item.getCombArray();
-                ArrayList<String> exampleArray = item.getExampleArray();
-                ArrayList<Position> positionsArray = item.getPositionsArray();
-                if (structArray.size() > 1) {
-                    jobj.put("grammatical_structure", structArray);
-                    jobj.put("example", exampleArray);
-                    jobj.put("occurrences", item.getOccurrences());
-                    JSONArray jArrPos = new JSONArray();
-                    for (Position position : positionsArray) {
-                        JSONObject jObjPos = new JSONObject();
-                        String curPos = position.getPosition().toString();
-                        jObjPos.put("position", curPos);
-                        destinations.add(curPos);
-                        jObjPos.put("occurrences", position.getOccurrences());
-                        jArrPos.put(jObjPos);
-                    }
-                    jobj.put("positions", jArrPos);
-                }
-                jArr.put(jobj);
-
-            }
-            for (String pos : destinations) {
-
-            }
-            jObjWrapper.put(pos, jobj);
-            fw.write(jObjWrapper.toString(2));
+            gson.toJson(combinationsList, new FileWriter(outputFileName));
         } catch (IOException e) {
             e.printStackTrace();
-        } finally {
-            try {
-                if (fw != null) {
-                    fw.close();
-                }
-            } catch (IOException ex) {
-                ex.printStackTrace();
-            }
         }
     }
 
     private void sortCombinations() {
         combinationsList.sort(Comparator.comparingInt(Combination::getOccurrences));
         combinationsList.removeIf(com -> com.getOccurrences() < 2);
+        combinationsList.removeIf(com -> com.getCombArray().size() < 2);
         Collections.reverse(combinationsList);
     }
 }

@@ -4,7 +4,6 @@ package com.structure.app;
 class Position {
     private PositionEnum position;
     private int occurrences;
-    public String[] alias = {"FIRST", "LAST", "ELSE"};
     public enum PositionEnum {FIRST, LAST, ELSE}
 
     Position(PositionEnum position) {
