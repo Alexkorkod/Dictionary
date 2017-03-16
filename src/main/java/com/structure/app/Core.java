@@ -1,10 +1,8 @@
 package com.structure.app;
 
 import org.apache.commons.io.IOUtils;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import ru.stachek66.nlp.mystem.holding.Factory;
 import ru.stachek66.nlp.mystem.holding.MyStem;
 import ru.stachek66.nlp.mystem.holding.MyStemApplicationException;
@@ -14,10 +12,7 @@ import scala.Option;
 import scala.collection.JavaConversions;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
+import java.util.*;
 
 class Core {
 
@@ -27,7 +22,7 @@ class Core {
     private File input;
     private ArrayList<ArrayList<String>> resultArray;
     private ArrayList<Combination> combinationsList = new ArrayList<>();
-    private String outputFileName = "output.txt";
+    private String outputFileName = "output.json";
 
     void setOutputFileName(String outputFileName) {
         this.outputFileName = outputFileName;
@@ -52,8 +47,7 @@ class Core {
         }
     }
 
-    private void breakStructureDown() throws ParseException {
-        JSONParser parser = new JSONParser();
+    private void breakStructureDown() {
         for (ArrayList<String> item : resultArray) {
             for (int i = 0; i < item.size(); i++) {
                 ArrayList<String> col = new ArrayList<>();
@@ -66,11 +60,11 @@ class Core {
                 }
                 for (int j = i; j < item.size(); j++) {
                     String tmp = item.get(j);
-                    JSONObject jobj = ((JSONObject) parser.parse(tmp));
+                    JSONObject jobj = new JSONObject(tmp);
                     JSONArray infoArr = (JSONArray) jobj.get("analysis");
                     String text = jobj.get("text").toString();
                     String gr;
-                    if (infoArr.size() > 0) {
+                    if (infoArr.length() > 0) {
                         gr = ((JSONObject) infoArr.get(0)).get("gr").toString();
                     } else {
                         gr = "Unknown";
@@ -121,37 +115,37 @@ class Core {
     }
 
     private void writeResults() {
-        BufferedWriter bw = null;
         FileWriter fw = null;
         try {
             fw = new FileWriter(outputFileName);
-            bw = new BufferedWriter(fw);
+            JSONObject jObjWrapper = new JSONObject();
+            JSONArray jArr = new JSONArray();
             for (Combination item : combinationsList) {
+                JSONObject jobj = new JSONObject();
                 ArrayList<String> structArray = item.getCombArray();
                 ArrayList<String> exampleArray = item.getExampleArray();
                 ArrayList<Position> positionsArray = item.getPositionsArray();
                 if (structArray.size() > 1) {
-                    int iter = 1;
+                    jobj.put("grammatical_structure", structArray);
+                    jobj.put("example", exampleArray);
+                    jobj.put("occurrences", item.getOccurrences());
+                    JSONArray jArrPos = new JSONArray();
                     for (Position position : positionsArray) {
-                        bw.write(position.getPosition().toString() + " : " + position.getOccurrences());
-                        if (positionsArray.size() != iter) {
-                            bw.write(" :: ");
-                        }
-                        iter++;
+                        JSONObject jObjPos = new JSONObject();
+                        jObjPos.put("position", position.getPosition().toString());
+                        jObjPos.put("occurrences", position.getOccurrences());
+                        jArrPos.put(jObjPos);
                     }
-                    bw.write("\n");
-                    bw.write(String.join(" :: ", structArray) + "\n");
-                    bw.write(String.join(" ", exampleArray) + "\n");
-                    bw.write(item.getOccurrences() + "\n");
+                    jobj.put("positions", jArrPos);
+                    jArr.put(jobj);
                 }
             }
+            jObjWrapper.put("output", jArr);
+            fw.write(jObjWrapper.toString(2));
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
             try {
-                if (bw != null) {
-                    bw.close();
-                }
                 if (fw != null) {
                     fw.close();
                 }
