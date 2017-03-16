@@ -18,9 +18,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.function.Predicate;
 
-//TODO make combinationsList sorted by Combination's occurrences
 class Core {
 
     private final MyStem mystemAnalyzer =
@@ -60,23 +58,37 @@ class Core {
             for (int i = 0; i < item.size(); i++) {
                 ArrayList<String> col = new ArrayList<>();
                 ArrayList<String> example = new ArrayList<>();
+                Position.PositionEnum placement = Position.PositionEnum.ELSE;
+                if (i == 0) {
+                    placement = Position.PositionEnum.FIRST;
+                } else if (i == item.size()) {
+                    placement = Position.PositionEnum.LAST;
+                }
                 for (int j = i; j < item.size(); j++) {
                     String tmp = item.get(j);
                     JSONObject jobj = ((JSONObject) parser.parse(tmp));
                     JSONArray infoArr = (JSONArray) jobj.get("analysis");
                     String text = jobj.get("text").toString();
+                    String gr;
                     if (infoArr.size() > 0) {
-                        String gr = ((JSONObject) infoArr.get(0)).get("gr").toString();
-                        col.add(gr);
-                        example.add(text);
-                        int pos = posInCombArray(col);
-                        if (pos < 0) {
-                            combinationsList.add(new Combination(col, example));
-                        } else {
-                            combinationsList.get(pos).increment();
-                        }
+                        gr = ((JSONObject) infoArr.get(0)).get("gr").toString();
                     } else {
-                        break;
+                        gr = "Unknown";
+                    }
+                    col.add(gr);
+                    example.add(text);
+                    int pos = posInCombArray(col);
+                    if (pos < 0) {
+                        combinationsList.add(new Combination(col, example, placement));
+                    } else {
+                        Combination currentCombination = combinationsList.get(pos);
+                        int placePos = currentCombination.findPositionPosition(placement);
+                        if (placePos >= 0) {
+                            currentCombination.getPositionsArray().get(placePos).increment();
+                        } else {
+                            currentCombination.getPositionsArray().add(new Position(placement));
+                        }
+                        currentCombination.increment();
                     }
                 }
             }
@@ -117,7 +129,17 @@ class Core {
             for (Combination item : combinationsList) {
                 ArrayList<String> structArray = item.getCombArray();
                 ArrayList<String> exampleArray = item.getExampleArray();
+                ArrayList<Position> positionsArray = item.getPositionsArray();
                 if (structArray.size() > 1) {
+                    int iter = 1;
+                    for (Position position : positionsArray) {
+                        bw.write(position.getPosition().toString() + " : " + position.getOccurrences());
+                        if (positionsArray.size() != iter) {
+                            bw.write(" :: ");
+                        }
+                        iter++;
+                    }
+                    bw.write("\n");
                     bw.write(String.join(" :: ", structArray) + "\n");
                     bw.write(String.join(" ", exampleArray) + "\n");
                     bw.write(item.getOccurrences() + "\n");
